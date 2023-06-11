@@ -2,7 +2,14 @@
 name = "ch4nn337-cli"
 version = "0.1.0"
 edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+authors = ["Daniel Knopik <daniel@dknopik.de>"]
+description = "Payment Channels enhanced by the powers of ERC-4337: a PoC"
 
 [dependencies]
+ch4nn337-lib = { path="../ch4nn337-lib" }
+clap = { version="4.3.3", features = ["derive"] }
+ethers = { path="../../../ethers-rs/ethers" } # todo replace by git repo when done
+dirs = "5.0.1"
+serde_json = "1.0.96"
+tokio = { version = "1", features = ["rt", "macros"] }
+anyhow = "1.0.71"

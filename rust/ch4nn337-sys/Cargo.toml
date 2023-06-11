@@ -1,0 +1,7 @@
+[package]
+name = "ch4nn337-sys"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+ethers = { path="../../../ethers-rs/ethers", default-features=false, features=["abigen"] } # todo replace by git repo when done

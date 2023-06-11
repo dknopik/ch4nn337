@@ -39,15 +39,23 @@ contract AAChannel is IAccount, Initializable {
     function initialize(address _partyA, address _partyB) public initializer {
         partyA = _partyA;
         partyB = _partyB;
+        // assume all funds up until now belong to partyA
+        balanceA += uint96(address(this).balance);
+        (bool success,) = payable(address(_entryPoint)).call{value: address(this).balance}("");
+        (success);
     }
 
     function validateUserOp(UserOperation calldata userOp, bytes32 userOpHash, uint256 /*missingAccountFunds*/)
     external override virtual returns (uint256 validationData) {
         _requireFromEntryPoint();
-        if (userOp.nonce > nonce) {
+        bytes4 selector = bytes4(userOp.callData);
+        if (selector == this.noop.selector && nonce == 0) {
+            nonce = 1;
+            return _validateSignature(userOp, userOpHash);
+        }
+        //if (userOp.nonce > nonce) {
             nonce = uint56(userOp.nonce);
             // todo: maybe limit gas limits to avoid griefing the channel
-            bytes4 selector = bytes4(userOp.callData);
             if (selector == this.closeDispute.selector) {
                 if (disputeTimestamp != 0) {
                     validationData = _validateSignature(userOp, userOpHash);
@@ -66,7 +74,7 @@ contract AAChannel is IAccount, Initializable {
                     return 0;
                 }
             }
-        }
+        //}
         validationData = 1;
     }
 
@@ -103,6 +111,8 @@ contract AAChannel is IAccount, Initializable {
         (bool success,) = payable(address(_entryPoint)).call{value: msg.value}("");
         (success);
     }
+
+    function noop() public{}
 
     uint48 private constant disputeTimeout = 60 * 60 * 15;
     // positive valueTransfer signifies flow from A to B, negative valueTransfer signifies flow from B to A
@@ -221,22 +231,11 @@ contract AAChannel is IAccount, Initializable {
         balanceB = 0;
     }
 
-    function _receive() private {
-        if (msg.value > 0) {
-            if (msg.sender == partyA) {
-                depositToA();
-            } else if (msg.sender == partyB) {
-                depositToB();
-            }
-            // else: can be rescued using coopWithdraw and closeDispute
-        }
-    }
-
     receive() external payable {
-        _receive();
+        depositToA();
     }
 
     fallback() external payable {
-        _receive();
+        depositToA();
     }
 }
